@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Daily Attendance</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 2rem;
+    }
+    video, canvas {
+      width: 320px;
+      height: 240px;
+      border: 1px solid #ccc;
+      margin: 10px 0;
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Daily Attendance Form</h2>
+  <input type="text" id="name" placeholder="Enter your name" required><br>
+  <video id="video" autoplay playsinline></video><br>
+  <button id="snap">Capture Photo</button><br>
+  <canvas id="canvas" style="display: none;"></canvas>
+  <img id="photo" alt="Captured Photo" style="display: none;"><br>
+  <button id="submit">Submit Attendance</button>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const photo = document.getElementById('photo');
+    const nameInput = document.getElementById('name');
+    const snapBtn = document.getElementById('snap');
+    const submitBtn = document.getElementById('submit');
+
+    // Start the webcam
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        alert("Camera access is required.");
+        console.error("Error accessing camera:", err);
+      });
+
+    // Capture the image
+    snapBtn.addEventListener('click', () => {
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0);
+      const dataUrl = canvas.toDataURL('image/png');
+      photo.src = dataUrl;
+      photo.style.display = 'block';
+    });
+
+    // Submit attendance
+    submitBtn.addEventListener('click', () => {
+      const name = nameInput.value.trim();
+      const photoData = photo.src;
+
+      if (!name || !photoData || photoData === window.location.href) {
+        alert("Please enter your name and capture a photo first.");
+        return;
+      }
+
+      fetch('https://script.google.com/macros/s/AKfycbxJdyNcfLK3Ycp4ML-RLarXxnYsZfaekioDRy_KNHfKwzR04wGf1O9Pfx48503eg4Irsg/exec', {
+        method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    name: name,
+    photo: photoData
+  })
+})
+      .then(response => response.json())
+      .then(data => {
+        console.log(data);
+        alert("Attendance submitted successfully!");
+        nameInput.value = '';
+        photo.src = '';
+        photo.style.display = 'none';
+      })
+      .catch(error => {
+        console.error("Submission error:", error);
+        alert("Submission failed. Please try again.");
+      });
+    });
+  </script>
+</body>
+</html>
